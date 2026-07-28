@@ -1,5 +1,5 @@
 #! /usr/bin/env bash
-set -euo pipefail
+set -eo pipefail
 
 # ============================================================
 # 启动 / 关闭 ROS2 Navigation Stack 与 RViz2
@@ -16,6 +16,7 @@ RVIZ_CONFIG="${PROJECT_DIR}/src/navigation/src/robot_navigo/rviz/rviz2_config.rv
 export RMW_IMPLEMENTATION="${RMW_IMPLEMENTATION:-rmw_zenoh_cpp}"
 export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-89}"
 export SDK_CLIENT_IP="${SDK_CLIENT_IP:-127.0.0.1}"
+export COLCON_TRACE="${COLCON_TRACE:-}"
 
 on_interrupt() {
   echo "[INFO] Caught interrupt, stopping child processes..."
