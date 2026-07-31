@@ -49,6 +49,7 @@ target_port: 43988
 ```bash
 export RMW_IMPLEMENTATION=rmw_zenoh_cpp
 export ROS_DOMAIN_ID=89
+
 /opt/ros/humble/lib/rmw_zenoh_cpp/rmw_zenohd
 ```
 
@@ -60,6 +61,7 @@ export ROS_DOMAIN_ID=89
 
 ```bash
 cd /home/qiyuan/Softwares/Matrix
+
 ./bin/sim_launcher
 ```
 
@@ -79,10 +81,13 @@ cd /home/qiyuan/Softwares/Matrix
 
 ```bash
 sudo -i
+
 export RMW_IMPLEMENTATION=rmw_zenoh_cpp
 export ROS_DOMAIN_ID=89
 export SDK_CLIENT_IP=127.0.0.1
+
 source /opt/robot/robot-forward/install/setup.bash
+
 /opt/robot/robot-forward/install/robot_forward/lib/robot_forward/robot_forward
 ```
 
@@ -96,11 +101,12 @@ source /opt/robot/robot-forward/install/setup.bash
 ### 终端 3 — 启动导航栈
 
 ```bash
+cd /home/qiyuan/Softwares/genisom_roamerx_open
+
 export RMW_IMPLEMENTATION=rmw_zenoh_cpp
 export ROS_DOMAIN_ID=89
 export SDK_CLIENT_IP=127.0.0.1
 
-cd /home/qiyuan/Softwares/genisom_roamerx_open
 bash script/bash/start_navigation.sh nav
 ```
 
@@ -122,11 +128,12 @@ bash script/bash/start_navigation.sh nav
 ### 终端 4 — 启动 RViz2 可视化
 
 ```bash
+cd /home/qiyuan/Softwares/genisom_roamerx_open
+
 export RMW_IMPLEMENTATION=rmw_zenoh_cpp
 export ROS_DOMAIN_ID=89
 export SDK_CLIENT_IP=127.0.0.1
 
-cd /home/qiyuan/Softwares/genisom_roamerx_open
 bash script/bash/start_navigation.sh rviz
 ```
 
