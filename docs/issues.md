@@ -63,3 +63,73 @@ genisom_roamerx_open 导航栈
 | `pub_tf` | Matrix 工作空间内 | 开源 | 备选 TF 发布（`pub_tf.launch.py`） |
 
 **你当前的问题**：没有运行 MATRiX 仿真（`robot_mujoco`），所以没人发布 `/odom/mujoco_odom`，导航栈的 TfManager 缓冲区为空。
+
+
+
+
+
+好消息：TfManager 不再报 odom 空警告了，导航栈也在规划路径（"Passing new path to controller"）。问题在下游——cmd_vel 没到达 mc_ctrl。
+
+
+**`/cmd_vel` 话题完全不存在！** 导航栈在规划路径但没有发布速度命令。让我检查导航栈的配置：
+
+
+`cmd_vel` 和 `cmd_vel_nav` 话题都不存在！控制器在规划路径但没有输出速度命令。检查控制器配置和日志：
+
+
+mc_ctrl 启动方式没问题。但**问题不在 mc_ctrl**——导航栈根本没有输出 `cmd_vel`，所以 mc_ctrl 收不到任何速度指令。
+
+让我深入排查为什么 MPPI 控制器不输出速度：
+
+
+mc_ctrl 启动方式没问题。问题在导航栈没有输出 cmd_vel。让我检查数据链路：
+
+
+odom 数据正常 (50Hz)。但 `cmd_vel` / `cmd_vel_nav` 话题完全不存在。让我检查控制器内部状态：
+
+
+关键发现：line 639 显示 `First /cmd_vel received`——说明 cmd_vel **确实被发布了**（mode_status_publisher 收到了）。之后不再打印是因为只记录"第一次"。
+
+问题可能在下游。让我检查 `vel_cmd_udp_publisher` 是否正常工作：
+
+
+发现两个关键问题：
+
+1. **`/cmd_vel` 话题不存在** — 导航栈没有输出速度命令
+2. **mc_ctrl 处于 `JOINT_FREE` 模式** — 关节自由，没有站立
+
+让我检查 mc_ctrl 是否正确接收 mujoco_sim 的 eCAL 数据：
+
+
+**找到根因了！** mc_ctrl 启动有严重错误：
+
+```
+client_ip: 192.168.234.1
+mp_recv_cp: 192.168.234.1:43997
+bind: Cannot assign requested address    ← 绑定失败！
+init error
+mp_recv_cp: 192.168.234.1:43900
+bind: Cannot assign requested address    ← 绑定失败！
+init error
+sdk init failed!                        ← SDK 初始化失败！
+```
+
+**mc_ctrl 尝试绑定 `192.168.234.1`（不存在的 IP），导致 SDK 初始化失败，无法接收任何 UDP 数据。** 这就是为什么：
+- mc_ctrl 停留在 `JOINT_FREE`（关节自由，没站立）
+- 导航栈的 cmd_vel 无法到达 mc_ctrl
+
+**修复方法**：重启 mc_ctrl 时设置 `SDK_CLIENT_IP=127.0.0.1`：
+
+```bash
+# 先 Ctrl+C 停掉当前 mc_ctrl
+
+# 正确启动：
+export SDK_CLIENT_IP=127.0.0.1
+cd /home/qiyuan/Softwares/Matrix/src/robot_mc/build/export/mc/bin
+taskset -c 7 ./mc_ctrl r 2>&1 | tee /tmp/mc_ctrl_carlaunreal.log
+```
+
+这样 mc_ctrl 会绑定到 `127.0.0.1:43997`（本地回环），SDK 初始化就能成功，然后：
+1. 接收 mujoco_sim 的 RobotState（通过 eCAL 或 UDP）
+2. 接收导航栈的速度指令（UDP 43988）
+3. 从 JOINT_FREE → STAND → RL_Walk

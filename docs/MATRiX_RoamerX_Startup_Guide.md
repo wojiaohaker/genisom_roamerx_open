@@ -135,6 +135,8 @@ export ROS_DOMAIN_ID=89
 export SDK_CLIENT_IP=127.0.0.1
 
 bash script/bash/start_navigation.sh rviz
+
+bash script/bash/start_navigation.sh nav 2>&1 | tee /tmp/nav.log
 ```
 
 ---
